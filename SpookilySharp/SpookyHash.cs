@@ -16,7 +16,6 @@ using System.Runtime.Serialization;
 using System.Security;
 using System.Security.Permissions;
 using System.Text.RegularExpressions;
-using Mnemosyne;
 
 namespace SpookilySharp
 {
@@ -243,7 +242,7 @@ namespace SpookilySharp
             {
                 while (p64 < end)
                 {
-                    Memory.Copy(buf, p64, BlockSize);
+                    MemCpy(buf, p64, BlockSize);
 
                     h0 += buf[0];
                     h2 ^= h10;
@@ -312,10 +311,10 @@ namespace SpookilySharp
             int remainder = length - (int)((byte*)end - (byte*)message);
             if (remainder != 0)
             {
-                Memory.Copy(buf, end, remainder);
+                MemCpy(buf, end, remainder);
             }
 
-            Memory.Zero((byte*)buf + remainder, BlockSize - remainder);
+            MemZero((byte*)buf + remainder, BlockSize - remainder);
             ((byte*)buf)[BlockSize - 1] = (byte)remainder;
 
             h0 += buf[0];
@@ -473,7 +472,7 @@ namespace SpookilySharp
             if (!AllowUnalignedRead && length != 0 && ((long)message & 7) != 0)
             {
                 ulong* buf = stackalloc ulong[2 * NumVars];
-                Memory.Copy(buf, message, length);
+                MemCpy(buf, message, length);
                 message = buf;
             }
 
@@ -825,7 +824,7 @@ namespace SpookilySharp
             {
                 fixed (ulong* uptr = _data)
                 {
-                    Memory.Copy((byte*)uptr + _remainder, message, length);
+                    MemCpy((byte*)uptr + _remainder, message, length);
                 }
 
                 _length = length + _length;
@@ -863,7 +862,7 @@ namespace SpookilySharp
                 if (_remainder != 0)
                 {
                     int prefix = BufSize - _remainder;
-                    Memory.Copy((byte*)p64Fixed + _remainder, message, prefix);
+                    MemCpy((byte*)p64Fixed + _remainder, message, prefix);
 
                     h0 += p64Fixed[0];
                     h2 ^= h10;
@@ -1069,7 +1068,7 @@ namespace SpookilySharp
                     {
                         while (p64 < end)
                         {
-                            Memory.Copy(dataPtr, p64, BlockSize);
+                            MemCpy(dataPtr, p64, BlockSize);
                             h0 += _data[0];
                             h2 ^= h10;
                             h11 ^= h0;
@@ -1138,7 +1137,7 @@ namespace SpookilySharp
                 _remainder = remainder;
                 if (remainder != 0)
                 {
-                    Memory.Copy(p64Fixed, end, remainder);
+                    MemCpy(p64Fixed, end, remainder);
                 }
             }
 
@@ -1278,7 +1277,7 @@ namespace SpookilySharp
                     data += NumVars;
                     remainder = remainder - BlockSize;
                 }
-                Memory.Zero((byte*)data + remainder, BlockSize - remainder);
+                MemZero((byte*)data + remainder, BlockSize - remainder);
                 *((byte*)data + BlockSize - 1) = (byte)remainder;
                 h0 += data[0];
                 h1 += data[1];
@@ -1424,6 +1423,656 @@ namespace SpookilySharp
             info.AddValue("s11", _state11);
             info.AddValue("l", _length);
             info.AddValue("r", _remainder);
+
         }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemCpy4ByteAligned(void* dest, void* source, long length)
+        {
+            if (length >= 4)
+            {
+                var di = (int*)dest;
+                var si = (int*)source;
+                long rem = length >> 2;
+                length -= rem << 2;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *di++ = *si++;
+                        goto case 15;
+                    case 15:
+                        *di++ = *si++;
+                        goto case 14;
+                    case 14:
+                        *di++ = *si++;
+                        goto case 13;
+                    case 13:
+                        *di++ = *si++;
+                        goto case 12;
+                    case 12:
+                        *di++ = *si++;
+                        goto case 11;
+                    case 11:
+                        *di++ = *si++;
+                        goto case 10;
+                    case 10:
+                        *di++ = *si++;
+                        goto case 9;
+                    case 9:
+                        *di++ = *si++;
+                        goto case 8;
+                    case 8:
+                        *di++ = *si++;
+                        goto case 7;
+                    case 7:
+                        *di++ = *si++;
+                        goto case 6;
+                    case 6:
+                        *di++ = *si++;
+                        goto case 5;
+                    case 5:
+                        *di++ = *si++;
+                        goto case 4;
+                    case 4:
+                        *di++ = *si++;
+                        goto case 3;
+                    case 3:
+                        *di++ = *si++;
+                        goto case 2;
+                    case 2:
+                        *di++ = *si++;
+                        goto case 1;
+                    case 1:
+                        *di++ = *si++;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = di;
+                source = si;
+            }
+            if (length != 0)
+            {
+                var db = (byte*)dest;
+                var sb = (byte*)source;
+                switch (length)
+                {
+                    case 3:
+                        *db++ = *sb++;
+                        goto case 2;
+                    case 2:
+                        *db++ = *sb++;
+                        goto case 1;
+                    case 1:
+                        *db++ = *sb++;
+                        break;
+                }
+            }
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemCpy2ByteAligned(void* dest, void* source, long length)
+        {
+            if (length >= sizeof(short))
+            {
+                var dl = (short*)dest;
+                var sl = (short*)source;
+                long rem = length >> 1;
+                length -= rem << 1;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *dl++ = *sl++;
+                        goto case 15;
+                    case 15:
+                        *dl++ = *sl++;
+                        goto case 14;
+                    case 14:
+                        *dl++ = *sl++;
+                        goto case 13;
+                    case 13:
+                        *dl++ = *sl++;
+                        goto case 12;
+                    case 12:
+                        *dl++ = *sl++;
+                        goto case 11;
+                    case 11:
+                        *dl++ = *sl++;
+                        goto case 10;
+                    case 10:
+                        *dl++ = *sl++;
+                        goto case 9;
+                    case 9:
+                        *dl++ = *sl++;
+                        goto case 8;
+                    case 8:
+                        *dl++ = *sl++;
+                        goto case 7;
+                    case 7:
+                        *dl++ = *sl++;
+                        goto case 6;
+                    case 6:
+                        *dl++ = *sl++;
+                        goto case 5;
+                    case 5:
+                        *dl++ = *sl++;
+                        goto case 4;
+                    case 4:
+                        *dl++ = *sl++;
+                        goto case 3;
+                    case 3:
+                        *dl++ = *sl++;
+                        goto case 2;
+                    case 2:
+                        *dl++ = *sl++;
+                        goto case 1;
+                    case 1:
+                        *dl++ = *sl++;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = dl;
+                source = sl;
+            }
+            if (length != 0)
+                *(byte*)dest = *(byte*)source;
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemCpyUnaligned(void* dest, void* source, long length)
+        {
+            var db = (byte*)dest;
+            var sb = (byte*)source;
+            switch (length & 15)
+            {
+                case 0:
+                    *db++ = *sb++;
+                    goto case 15;
+                case 15:
+                    *db++ = *sb++;
+                    goto case 14;
+                case 14:
+                    *db++ = *sb++;
+                    goto case 13;
+                case 13:
+                    *db++ = *sb++;
+                    goto case 12;
+                case 12:
+                    *db++ = *sb++;
+                    goto case 11;
+                case 11:
+                    *db++ = *sb++;
+                    goto case 10;
+                case 10:
+                    *db++ = *sb++;
+                    goto case 9;
+                case 9:
+                    *db++ = *sb++;
+                    goto case 8;
+                case 8:
+                    *db++ = *sb++;
+                    goto case 7;
+                case 7:
+                    *db++ = *sb++;
+                    goto case 6;
+                case 6:
+                    *db++ = *sb++;
+                    goto case 5;
+                case 5:
+                    *db++ = *sb++;
+                    goto case 4;
+                case 4:
+                    *db++ = *sb++;
+                    goto case 3;
+                case 3:
+                    *db++ = *sb++;
+                    goto case 2;
+                case 2:
+                    *db++ = *sb++;
+                    goto case 1;
+                case 1:
+                    *db++ = *sb++;
+                    if ((length -= 16) > 0)
+                        goto case 0;
+                    return;
+            }
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemCpy(void* dest, void* source, long length)
+        {
+            if (!AllowUnalignedRead)
+            {
+                int alignTest = (int)dest | (int)source;
+                if ((alignTest & 1) != 0)
+                {
+                    MemCpyUnaligned(dest, source, length);
+                    return;
+                }
+                if ((alignTest & 3) != 0)
+                {
+                    MemCpy2ByteAligned(dest, source, length);
+                    return;
+                }
+                if ((alignTest & 7) != 0)
+                {
+                    MemCpy4ByteAligned(dest, source, length);
+                    return;
+                }
+            }
+            if (length >= 8)
+            {
+                var dl = (long*)dest;
+                var sl = (long*)source;
+                long rem = length >> 3;
+                length -= rem << 3;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *dl++ = *sl++;
+                        goto case 15;
+                    case 15:
+                        *dl++ = *sl++;
+                        goto case 14;
+                    case 14:
+                        *dl++ = *sl++;
+                        goto case 13;
+                    case 13:
+                        *dl++ = *sl++;
+                        goto case 12;
+                    case 12:
+                        *dl++ = *sl++;
+                        goto case 11;
+                    case 11:
+                        *dl++ = *sl++;
+                        goto case 10;
+                    case 10:
+                        *dl++ = *sl++;
+                        goto case 9;
+                    case 9:
+                        *dl++ = *sl++;
+                        goto case 8;
+                    case 8:
+                        *dl++ = *sl++;
+                        goto case 7;
+                    case 7:
+                        *dl++ = *sl++;
+                        goto case 6;
+                    case 6:
+                        *dl++ = *sl++;
+                        goto case 5;
+                    case 5:
+                        *dl++ = *sl++;
+                        goto case 4;
+                    case 4:
+                        *dl++ = *sl++;
+                        goto case 3;
+                    case 3:
+                        *dl++ = *sl++;
+                        goto case 2;
+                    case 2:
+                        *dl++ = *sl++;
+                        goto case 1;
+                    case 1:
+                        *dl++ = *sl++;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = dl;
+                source = sl;
+            }
+            if (length != 0)
+            {
+                var db = (byte*)dest;
+                var sb = (byte*)source;
+                switch (length)
+                {
+                    case 7:
+                        *db++ = *sb++;
+                        goto case 6;
+                    case 6:
+                        *db++ = *sb++;
+                        goto case 5;
+                    case 5:
+                        *db++ = *sb++;
+                        goto case 4;
+                    case 4:
+                        *db++ = *sb++;
+                        goto case 3;
+                    case 3:
+                        *db++ = *sb++;
+                        goto case 2;
+                    case 2:
+                        *db++ = *sb++;
+                        goto case 1;
+                    case 1:
+                        *db++ = *sb++;
+                        break;
+                }
+            }
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemZero4ByteAligned(void* dest, long length)
+        {
+            if (length >= 4)
+            {
+                var di = (int*)dest;
+                long rem = length >> 2;
+                length -= rem << 2;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *di++ = 0;
+                        goto case 15;
+                    case 15:
+                        *di++ = 0;
+                        goto case 14;
+                    case 14:
+                        *di++ = 0;
+                        goto case 13;
+                    case 13:
+                        *di++ = 0;
+                        goto case 12;
+                    case 12:
+                        *di++ = 0;
+                        goto case 11;
+                    case 11:
+                        *di++ = 0;
+                        goto case 10;
+                    case 10:
+                        *di++ = 0;
+                        goto case 9;
+                    case 9:
+                        *di++ = 0;
+                        goto case 8;
+                    case 8:
+                        *di++ = 0;
+                        goto case 7;
+                    case 7:
+                        *di++ = 0;
+                        goto case 6;
+                    case 6:
+                        *di++ = 0;
+                        goto case 5;
+                    case 5:
+                        *di++ = 0;
+                        goto case 4;
+                    case 4:
+                        *di++ = 0;
+                        goto case 3;
+                    case 3:
+                        *di++ = 0;
+                        goto case 2;
+                    case 2:
+                        *di++ = 0;
+                        goto case 1;
+                    case 1:
+                        *di++ = 0;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = di;
+            }
+            if (length != 0)
+            {
+                var db = (byte*)dest;
+                switch (length)
+                {
+                    case 3:
+                        *db++ = 0;
+                        goto case 2;
+                    case 2:
+                        *db++ = 0;
+                        goto case 1;
+                    case 1:
+                        *db++ = 0;
+                        break;
+                }
+            }
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemZero2ByteAligned(void* dest, long length)
+        {
+            if (length >= sizeof(short))
+            {
+                var dl = (short*)dest;
+                long rem = length >> 1;
+                length -= rem << 1;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *dl++ = 0;
+                        goto case 15;
+                    case 15:
+                        *dl++ = 0;
+                        goto case 14;
+                    case 14:
+                        *dl++ = 0;
+                        goto case 13;
+                    case 13:
+                        *dl++ = 0;
+                        goto case 12;
+                    case 12:
+                        *dl++ = 0;
+                        goto case 11;
+                    case 11:
+                        *dl++ = 0;
+                        goto case 10;
+                    case 10:
+                        *dl++ = 0;
+                        goto case 9;
+                    case 9:
+                        *dl++ = 0;
+                        goto case 8;
+                    case 8:
+                        *dl++ = 0;
+                        goto case 7;
+                    case 7:
+                        *dl++ = 0;
+                        goto case 6;
+                    case 6:
+                        *dl++ = 0;
+                        goto case 5;
+                    case 5:
+                        *dl++ = 0;
+                        goto case 4;
+                    case 4:
+                        *dl++ = 0;
+                        goto case 3;
+                    case 3:
+                        *dl++ = 0;
+                        goto case 2;
+                    case 2:
+                        *dl++ = 0;
+                        goto case 1;
+                    case 1:
+                        *dl++ = 0;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = dl;
+            }
+            if (length != 0)
+                *(byte*)dest = 0;
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemZeroUnaligned(void* dest, long length)
+        {
+            var db = (byte*)dest;
+            switch (length & 15)
+            {
+                case 0:
+                    *db++ = 0;
+                    goto case 15;
+                case 15:
+                    *db++ = 0;
+                    goto case 14;
+                case 14:
+                    *db++ = 0;
+                    goto case 13;
+                case 13:
+                    *db++ = 0;
+                    goto case 12;
+                case 12:
+                    *db++ = 0;
+                    goto case 11;
+                case 11:
+                    *db++ = 0;
+                    goto case 10;
+                case 10:
+                    *db++ = 0;
+                    goto case 9;
+                case 9:
+                    *db++ = 0;
+                    goto case 8;
+                case 8:
+                    *db++ = 0;
+                    goto case 7;
+                case 7:
+                    *db++ = 0;
+                    goto case 6;
+                case 6:
+                    *db++ = 0;
+                    goto case 5;
+                case 5:
+                    *db++ = 0;
+                    goto case 4;
+                case 4:
+                    *db++ = 0;
+                    goto case 3;
+                case 3:
+                    *db++ = 0;
+                    goto case 2;
+                case 2:
+                    *db++ = 0;
+                    goto case 1;
+                case 1:
+                    *db++ = 0;
+                    if ((length -= 16) > 0)
+                        goto case 0;
+                    return;
+            }
+        }
+        [SecurityCritical]
+        [ExcludeFromCodeCoverage]
+        private static unsafe void MemZero(void* dest, long length)
+        {
+            if (!AllowUnalignedRead)
+            {
+                int alignTest = (int)dest;
+                if ((alignTest & 1) != 0)
+                {
+                    MemZeroUnaligned(dest, length);
+                    return;
+                }
+                if ((alignTest & 3) != 0)
+                {
+                    MemZero2ByteAligned(dest, length);
+                    return;
+                }
+                if ((alignTest & 7) != 0)
+                {
+                    MemZero4ByteAligned(dest, length);
+                    return;
+                }
+            }
+            if (length >= 8)
+            {
+                var dl = (long*)dest;
+                long rem = length >> 3;
+                length -= rem << 3;
+                switch (rem & 15)
+                {
+                    case 0:
+                        *dl++ = 0;
+                        goto case 15;
+                    case 15:
+                        *dl++ = 0;
+                        goto case 14;
+                    case 14:
+                        *dl++ = 0;
+                        goto case 13;
+                    case 13:
+                        *dl++ = 0;
+                        goto case 12;
+                    case 12:
+                        *dl++ = 0;
+                        goto case 11;
+                    case 11:
+                        *dl++ = 0;
+                        goto case 10;
+                    case 10:
+                        *dl++ = 0;
+                        goto case 9;
+                    case 9:
+                        *dl++ = 0;
+                        goto case 8;
+                    case 8:
+                        *dl++ = 0;
+                        goto case 7;
+                    case 7:
+                        *dl++ = 0;
+                        goto case 6;
+                    case 6:
+                        *dl++ = 0;
+                        goto case 5;
+                    case 5:
+                        *dl++ = 0;
+                        goto case 4;
+                    case 4:
+                        *dl++ = 0;
+                        goto case 3;
+                    case 3:
+                        *dl++ = 0;
+                        goto case 2;
+                    case 2:
+                        *dl++ = 0;
+                        goto case 1;
+                    case 1:
+                        *dl++ = 0;
+                        if ((rem -= 16) > 0)
+                            goto case 0;
+                        break;
+                }
+                dest = dl;
+            }
+            if (length != 0)
+            {
+                var db = (byte*)dest;
+                switch (length)
+                {
+                    case 7:
+                        *db++ = 0;
+                        goto case 6;
+                    case 6:
+                        *db++ = 0;
+                        goto case 5;
+                    case 5:
+                        *db++ = 0;
+                        goto case 4;
+                    case 4:
+                        *db++ = 0;
+                        goto case 3;
+                    case 3:
+                        *db++ = 0;
+                        goto case 2;
+                    case 2:
+                        *db++ = 0;
+                        goto case 1;
+                    case 1:
+                        *db++ = 0;
+                        break;
+                }
+            }
+        }
+
+
     }
 }

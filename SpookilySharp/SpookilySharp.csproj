@@ -37,10 +37,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mnemosyne" Version="1.1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="SpookyHashOverloads.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>SpookyHashOverloads.generated.cs</LastGenOutput>
